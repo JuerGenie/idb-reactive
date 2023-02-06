@@ -1,0 +1,44 @@
+{
+  "name": "idb-reactive",
+  "private": false,
+  "author": {
+    "name": "JuerGenie",
+    "email": "juergenie@qq.com"
+  },
+  "homepage": "https://github.com/juergenie/idb-reactive",
+  "license": "MIT",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.191",
+    "@types/node": "^18.11.19",
+    "@vitejs/plugin-vue": "^4.0.0",
+    "@vitejs/plugin-vue-jsx": "^3.0.0",
+    "typescript": "^4.9.3",
+    "vite": "^4.1.0",
+    "vite-plugin-dts": "^1.7.2",
+    "vue": "^3.2.47",
+    "@vue/reactivity": "^3.2.47",
+    "@vue/runtime-core": "^3.2.47",
+    "idb-keyval": "^6.2.0"
+  },
+  "peerDependencies": {
+    "@vue/reactivity": "^3.2.47",
+    "@vue/runtime-core": "^3.2.47",
+    "idb-keyval": "^6.2.0"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
+  }
+}
