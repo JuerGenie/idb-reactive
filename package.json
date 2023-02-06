@@ -7,14 +7,16 @@
   },
   "homepage": "https://github.com/juergenie/idb-reactive",
   "license": "MIT",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "exports": {
     ".": {
+      "import": "./dist/index.js",
       "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
