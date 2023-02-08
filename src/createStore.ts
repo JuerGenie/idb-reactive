@@ -1,5 +1,5 @@
 import * as keyval from "idb-keyval";
-import { useKeyval } from "./useKeyval";
+import { useKeyval, UseKeyvalOptions } from "./useKeyval";
 
 export function createStore(storeName: string) {
   const store = keyval.createStore(storeName, storeName);
@@ -28,8 +28,9 @@ export function createStore(storeName: string) {
 
     useKeyval: <Key extends IDBValidKey, Value>(
       key: Key,
-      defaultValue?: Value
-    ) => useKeyval(key, defaultValue, storeName),
+      defaultValue?: Value,
+      options?: UseKeyvalOptions
+    ) => useKeyval(key, defaultValue, storeName, options),
   };
 }
 

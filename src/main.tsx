@@ -1,6 +1,14 @@
 import { defineComponent, createApp, Suspense, ref } from "vue";
+import { useKeyval } from "./useKeyval";
 import { useStore } from "./useStore";
 import { isReady } from "./utils";
+
+// @ts-ignore
+window.useStore = useStore;
+// @ts-ignore
+window.useKeyval = useKeyval;
+// @ts-ignore
+window.vue = await import("vue");
 
 const App = defineComponent(async () => {
   const store = useStore("test");
