@@ -28,6 +28,7 @@ const App = defineComponent(async () => {
             value
             <input v-model={store[key]} />
           </label>
+          <button onClick={() => delete store[key]}>Remove</button>
         </li>
       ))}
       <li>

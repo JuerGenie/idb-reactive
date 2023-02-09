@@ -3,7 +3,7 @@ import { ref, toRaw, Ref } from "@vue/runtime-core";
 import { register } from "./utils/is-ready.js";
 import debounce from "lodash/debounce";
 import { WatchPausableReturn, watchPausable } from "@vueuse/shared";
-import { getChannel } from "./channel.js";
+import { emit as rawEmit } from "./channel.js";
 
 const StoreGetSymbol = Symbol("store.get");
 const StoreSetSymbol = Symbol("store.set");
@@ -34,7 +34,7 @@ export async function update(keyval: Ref<unknown>) {
 }
 
 export interface UseKeyvalOptions {
-  autoSynchronize?: boolean | BroadcastChannel;
+  autoSynchronize?: boolean;
 }
 
 export function useKeyval<Value>(
@@ -47,14 +47,9 @@ export function useKeyval<Value>(
     // 根据传入的storeName判断是否应该获取store对象，idb-keyval有默认的store，因此store不是必须的。
     // 尝试获取缓存中的store对象，如果没有缓存，则向缓存中存入一个新创建的对象。
     const store = (storeCache[storeName] ??= createStore(storeName));
-    let channel: BroadcastChannel;
-    if (autoSynchronize) {
-      if (autoSynchronize instanceof BroadcastChannel) {
-        channel = autoSynchronize;
-      } else {
-        channel = getChannel(storeName);
-      }
-    }
+    const emit = autoSynchronize
+      ? rawEmit.bind(undefined, storeName)
+      : () => {};
 
     const { result, ready } = register(
       ref<Value>(defaultValue!) as KeyvalRef<Value>
@@ -65,7 +60,7 @@ export function useKeyval<Value>(
       // 如果取出的值为undefined，意味着该key未初始化，将默认值写入数据库。
       if (res === undefined || res === null) {
         await store.set(key, toRaw(result.value));
-        channel.postMessage({ type: "create", key });
+        emit("create", key);
       }
       // 否则将取出的值置入ref中。
       else {
@@ -82,12 +77,13 @@ export function useKeyval<Value>(
             if (nv === undefined) {
               await store.del(key);
               watcher.stop();
-              channel.postMessage({ type: "remove", key });
+              delete keyvalCache[`${storeName}:${key}`];
+              emit("remove", key);
             }
             // 否则写入数据库。
             else {
               await store.set(key, toRaw(nv));
-              channel.postMessage({ type: "update", key });
+              emit("update", key);
             }
           }, 100),
           {

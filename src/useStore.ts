@@ -1,6 +1,6 @@
 import { computed, reactive, Ref, toRaw } from "@vue/runtime-core";
 import { watchPausable, WatchPausableReturn } from "@vueuse/shared";
-import { getChannel } from "./channel.js";
+import { on as rawOn } from "./channel.js";
 import { createStore } from "./createStore.js";
 import { pauseWatch, resumeWatch, update } from "./useKeyval.js";
 import { isReady, register } from "./utils/is-ready.js";
@@ -48,9 +48,13 @@ export function useStore(
                 autoSynchronize,
               });
             });
-            store.delMany(ov.filter((key) => !nv.includes(key)));
+            store.delMany(
+              ov
+                .filter((key) => !nv.includes(key))
+                .map((key) => ((store.useKeyval(key).value = undefined), key))
+            );
           },
-          { flush: "sync" }
+          { flush: "sync", deep: true }
         );
 
         ready(true);
@@ -62,32 +66,46 @@ export function useStore(
     };
 
     if (autoSynchronize) {
-      cache.channel = getChannel(storeName);
-      cache.channel.addEventListener("message", async (evt) => {
-        watcher?.pause();
-        switch (evt.data.type) {
-          case "update": {
-            const target = toRaw(result)[evt.data.key] as Ref<unknown>;
-            if (target) {
-              pauseWatch(target);
-              await update(target);
-              resumeWatch(target);
-            }
-            break;
+      const on = rawOn.bind(undefined, storeName);
+
+      on(
+        "create",
+        pauseAndDo((key) => {
+          watcher.pause();
+          result[key] = store.useKeyval(key, undefined, {
+            autoSynchronize,
+          });
+          watcher.resume;
+        })
+      );
+      on(
+        "update",
+        pauseAndDo(async (key) => {
+          const target = toRaw(result)[key] as Ref<unknown>;
+          if (target) {
+            pauseWatch(target);
+            await update(target);
+            resumeWatch(target);
           }
-          case "create": {
-            result[evt.data.key] = store.useKeyval(evt.data.key, undefined, {
-              autoSynchronize,
-            });
-            break;
+        })
+      );
+      on(
+        "remove",
+        pauseAndDo((key) => {
+          delete result[key];
+        })
+      );
+
+      function pauseAndDo<F extends Function>(func: F): F {
+        return (async (...args: any[]) => {
+          try {
+            watcher.pause();
+            return await func(...args);
+          } finally {
+            watcher.resume();
           }
-          case "remove": {
-            delete result[evt.data.key];
-            break;
-          }
-        }
-        watcher?.resume();
-      });
+        }) as any;
+      }
     }
 
     storeCache[storeName] = cache;
