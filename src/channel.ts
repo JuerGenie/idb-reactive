@@ -5,16 +5,16 @@ const channelCache: Record<string, BroadcastChannel> = {};
 type StoreEventHandler = (key: string) => void | Promise<void>;
 const channelEventListeners: Record<
   string,
-  Record<Events, Set<StoreEventHandler>>
+  Record<Events, StoreEventHandler[]>
 > = {};
 
 function getListeners(storeName: string) {
   return (
     channel[storeName] &&
     (channelEventListeners[storeName] ??= {
-      update: new Set(),
-      create: new Set(),
-      remove: new Set(),
+      update: [],
+      create: [],
+      remove: [],
     })
   );
 }
@@ -42,7 +42,7 @@ export function emit(store: string, type: Events, key: IDBValidKey) {
   channel[store].postMessage({ type, key });
 }
 export function on(store: string, type: Events, cb: StoreEventHandler) {
-  getListeners(store)[type].add(cb);
+  getListeners(store)[type].push(cb);
 }
 
 export function getChannel(storeName = "") {
