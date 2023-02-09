@@ -17,12 +17,12 @@ export function useStore(
   storeName = "",
   { autoSynchronize = true }: UseStoreOptions = {}
 ) {
+  let watcher: WatchPausableReturn;
+
   if (!storeCache[storeName]) {
     const { result, ready } = register(reactive<UseStoreResult>({}));
 
     const store = createStore(storeName);
-
-    let watcher: WatchPausableReturn;
     store
       // 从store中拿到所有的key
       .keys<string>()
@@ -95,21 +95,21 @@ export function useStore(
           delete result[key];
         })
       );
-
-      function pauseAndDo<F extends Function>(func: F): F {
-        return (async (...args: any[]) => {
-          try {
-            watcher.pause();
-            return await func(...args);
-          } finally {
-            watcher.resume();
-          }
-        }) as any;
-      }
     }
 
     storeCache[storeName] = cache;
   }
 
   return storeCache[storeName].store;
+
+  function pauseAndDo<F extends Function>(func: F): F {
+    return (async (...args: any[]) => {
+      try {
+        watcher.pause();
+        return await func(...args);
+      } finally {
+        watcher.resume();
+      }
+    }) as any;
+  }
 }
